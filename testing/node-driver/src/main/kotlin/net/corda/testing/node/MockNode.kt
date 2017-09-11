@@ -16,15 +16,16 @@ import net.corda.core.messaging.MessageRecipients
 import net.corda.core.messaging.RPCOps
 import net.corda.core.messaging.SingleMessageRecipient
 import net.corda.core.node.CordaPluginRegistry
-import net.corda.core.node.services.*
+import net.corda.core.node.services.IdentityService
+import net.corda.core.node.services.KeyManagementService
+import net.corda.core.node.services.NetworkMapCache
+import net.corda.core.node.services.NotaryService
 import net.corda.core.utilities.NetworkHostAndPort
 import net.corda.core.utilities.getOrThrow
 import net.corda.core.utilities.loggerFor
 import net.corda.finance.utils.WorldMapLocation
 import net.corda.node.internal.AbstractNode
 import net.corda.node.internal.StartedNode
-import net.corda.nodeapi.internal.ServiceInfo
-import net.corda.nodeapi.internal.ServiceType
 import net.corda.node.services.config.NodeConfiguration
 import net.corda.node.services.identity.PersistentIdentityService
 import net.corda.node.services.keys.E2ETestKeyManagementService
@@ -35,6 +36,8 @@ import net.corda.node.services.transactions.*
 import net.corda.node.utilities.AffinityExecutor
 import net.corda.node.utilities.AffinityExecutor.ServiceAffinityExecutor
 import net.corda.node.utilities.CertificateAndKeyPair
+import net.corda.nodeapi.internal.ServiceInfo
+import net.corda.nodeapi.internal.ServiceType
 import net.corda.testing.*
 import net.corda.testing.node.MockServices.Companion.makeTestDataSourceProperties
 import org.apache.activemq.artemis.utils.ReusableLatch
@@ -141,9 +144,9 @@ class MockNetwork(private val networkSendManuallyPumped: Boolean = false,
                         advertisedServices: Set<ServiceInfo>,
                         val id: Int,
                         val overrideServices: Map<ServiceInfo, KeyPair>?,
-                        val entropyRoot: BigInteger = BigInteger.valueOf(random63BitValue())) :
+                        private val entropyRoot: BigInteger = BigInteger.valueOf(random63BitValue())) :
             AbstractNode(config, advertisedServices, TestClock(), mockNet.busyLatch) {
-        var counter = entropyRoot
+        private var counter = entropyRoot
         override val log: Logger = loggerFor<MockNode>()
         override val platformVersion: Int get() = 1
         override val serverThread: AffinityExecutor =
@@ -264,7 +267,7 @@ class MockNetwork(private val networkSendManuallyPumped: Boolean = false,
                         throw IllegalStateException("Unable to enumerate all nodes in BFT cluster.")
                     }
                     clusterNodes.forEach {
-                        val notaryService = it.started!!.smm.findServices { it is BFTNonValidatingNotaryService }.single() as BFTNonValidatingNotaryService
+                        val notaryService = it.findTokenizableService<BFTNonValidatingNotaryService>()!!
                         notaryService.waitUntilReplicaHasInitialized()
                     }
                 }
