@@ -405,10 +405,15 @@ saveOwnNodeInfo()
 
         val tokenizableServices = mutableListOf(attachments, network, services.vaultService,
                 services.keyManagementService, services.identityService, platformClock, services.schedulerService,
-                services.auditService, services.monitoringService, services.networkMapCache, services.schemaService,
+        services.auditService, services.monitoringService, services.networkMapCache, services.schemaService,
                 services.transactionVerifierService, services.validatedTransactions, services.contractUpgradeService,
-                services, cordappProvider, this)
+                services, cordappProvider,this)
         makeNetworkServices(tokenizableServices)
+System.getProperty("corda.NodeInfoQuit")?.let {
+            NodeInfoSerializer.saveToFile(this)
+            log.info("Peacefully quitting after having written my NodeInfo to disk")
+            System.exit(0)
+        }
         return tokenizableServices
     }
 
