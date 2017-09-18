@@ -409,7 +409,6 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
                 services.transactionVerifierService, services.validatedTransactions, services.contractUpgradeService,
                 services, cordappProvider, this)
         makeNetworkServices(tokenizableServices)
-
         return tokenizableServices
     }
 
