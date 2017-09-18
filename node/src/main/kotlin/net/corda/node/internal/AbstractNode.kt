@@ -408,9 +408,8 @@ saveOwnNodeInfo()
         services.auditService, services.monitoringService, services.networkMapCache, services.schemaService,
                 services.transactionVerifierService, services.validatedTransactions, services.contractUpgradeService,
                 services, cordappProvider,this)
-        makeNetworkServices(tokenizableServices)
-System.getProperty("corda.NodeInfoQuit")?.let {
-            NodeInfoSerializer.saveToFile(this)
+        makeNetworkServices(tokenizableServices)System.getProperty("corda.NodeInfoQuit")?.let {
+            NodeInfoSerializer().saveToFile(configuration.baseDirectory, info, services.keyManagementService)
             log.info("Peacefully quitting after having written my NodeInfo to disk")
             System.exit(0)
         }
