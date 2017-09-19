@@ -12,10 +12,6 @@ import org.gradle.api.tasks.TaskAction
 import java.nio.file.Path
 import java.nio.file.Paths
 
-// Keep this in sync with the value in NodeInfoSerializer.kt
-final NODE_INFO_PATH = "additional-node-infos"
-
-
 /**
  * Creates nodes based on the configuration of this task in the gradle configuration DSL.
  *
