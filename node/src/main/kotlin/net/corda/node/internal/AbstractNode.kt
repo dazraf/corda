@@ -202,7 +202,7 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
         // Do all of this in a database transaction so anything that might need a connection has one.
         val startedImpl = initialiseDatabasePersistence {
             val tokenizableServices = makeServices()
-            saveOwnNodeInfo()
+saveOwnNodeInfo()
             smm = StateMachineManager(services,
                     checkpointStorage,
                     serverThread,
