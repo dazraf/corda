@@ -264,12 +264,6 @@ open class NodeStartup(val args: Array<String>) {
             if (it.isNotEmpty()) Node.printBasicNodeInfo("Providing network services", it.joinToString())
         }
         Node.printBasicNodeInfo("Loaded CorDapps", node.cordappProvider.cordapps.map { it.name }.joinToString())
-        val plugins = node.pluginRegistries
-                .map { it.javaClass.name }
-                .filterNot { it.startsWith("net.corda.node.") || it.startsWith("net.corda.core.") || it.startsWith("net.corda.nodeapi.") }
-                .map { it.substringBefore('$') }
-        if (plugins.isNotEmpty())
-            Node.printBasicNodeInfo("Loaded plugins", plugins.joinToString())
     }
 
     open fun drawBanner(versionInfo: VersionInfo) {

@@ -15,7 +15,7 @@ import net.corda.core.internal.uncheckedCast
 import net.corda.core.messaging.MessageRecipients
 import net.corda.core.messaging.RPCOps
 import net.corda.core.messaging.SingleMessageRecipient
-import net.corda.core.node.CordaPluginRegistry
+import net.corda.core.serialization.SerializationWhitelist
 import net.corda.core.node.services.*
 import net.corda.core.utilities.NetworkHostAndPort
 import net.corda.core.utilities.getOrThrow
@@ -233,8 +233,8 @@ class MockNetwork(private val networkSendManuallyPumped: Boolean = false,
 
         // Allow unit tests to modify the plugin list before the node start,
         // so they don't have to ServiceLoad test plugins into all unit tests.
-        val testPluginRegistries by lazy { super.pluginRegistries.toMutableList() }
-        override val pluginRegistries: List<CordaPluginRegistry>
+        val testPluginRegistries by lazy { super.serializationWhitelists.toMutableList() }
+        override val serializationWhitelists: List<SerializationWhitelist>
             get() = testPluginRegistries
 
         // This does not indirect through the NodeInfo object so it can be called before the node is started.
