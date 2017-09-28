@@ -1,7 +1,6 @@
 package net.corda.core.crypto
 
 import net.corda.core.crypto.CompositeKey.NodeAndWeight
-import net.corda.core.crypto.composite.CompositeSignaturesWithKeys
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.internal.declaredField
 import net.corda.core.internal.div
