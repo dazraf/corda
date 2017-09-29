@@ -2,7 +2,6 @@
 
 package net.corda.nodeapi.internal.serialization
 
-import net.corda.core.serialization.SerializationWhitelist
 import net.corda.core.serialization.*
 import net.corda.core.utilities.ByteSequence
 import net.corda.nodeapi.internal.serialization.amqp.AmqpHeaderV1_0
@@ -28,7 +27,7 @@ fun SerializerFactory.addToWhitelist(vararg types: Class<*>) {
 abstract class AbstractAMQPSerializationScheme : SerializationScheme {
     internal companion object {
         private val serializationWhitelists: List<SerializationWhitelist> by lazy {
-            ServiceLoader.load(SerializationWhitelist::class.java, this::class.java.classLoader).toList()
+            ServiceLoader.load(SerializationWhitelist::class.java, this::class.java.classLoader).toList() + DefaultWhitelist
         }
 
         fun registerCustomSerializers(factory: SerializerFactory) {
