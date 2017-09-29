@@ -174,7 +174,7 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
     }
 
     private fun saveOwnNodeInfo() {
-        NodeInfoSerializer().saveToFile(configuration.baseDirectory, info, services.keyManagementService)
+        NodeInfoSerializer.saveToFile(configuration.baseDirectory, info, services.keyManagementService)
     }
 
     private fun initCertificate() {
@@ -202,7 +202,7 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
         // Do all of this in a database transaction so anything that might need a connection has one.
         val startedImpl = initialiseDatabasePersistence {
             val tokenizableServices = makeServices()
-saveOwnNodeInfo()
+            saveOwnNodeInfo()
             smm = StateMachineManager(services,
                     checkpointStorage,
                     serverThread,
@@ -409,12 +409,6 @@ saveOwnNodeInfo()
                 services.transactionVerifierService, services.validatedTransactions, services.contractUpgradeService,
                 services, cordappProvider,this)
         makeNetworkServices(tokenizableServices)
-        // Property corda.NodeInfoQuit is defined when we want the node to generate its identity and then
-        // write it to disk. This is used in the deployment scripts and Cordformation.System.getProperty("corda.NodeInfoQuit")?.let {
-            NodeInfoSerializer().saveToFile(configuration.baseDirectory, info, services.keyManagementService)
-            log.info("Peacefully quitting after having written my NodeInfo to disk")
-            System.exit(0)
-        }
         return tokenizableServices
     }
 

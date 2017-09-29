@@ -1,6 +1,7 @@
 package net.corda.node.services.network
 
 import net.corda.cordform.CordformNode
+import net.corda.core.internal.createDirectories
 import net.corda.core.internal.div
 import net.corda.core.node.NodeInfo
 import net.corda.core.node.services.KeyManagementService
@@ -12,7 +13,9 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.nio.charset.Charset
+import rx.observers.TestSubscriber
+import rx.schedulers.TestScheduler
+import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.assertj.core.api.Assertions.assertThat
@@ -23,9 +26,10 @@ class NodeInfoSerializerTest : NodeBasedTest() {
     @Rule @JvmField var folder = TemporaryFolder()
 
     lateinit var keyManagementService: KeyManagementService
+    val scheduler = TestScheduler();
 
     // Object under test
-    val nodeInfoSerializer = NodeInfoSerializer()
+    lateinit var nodeInfoSerializer : NodeInfoSerializer
 
     companion object {
         val nodeInfoFileRegex = Regex("nodeInfo\\-.*")
@@ -36,11 +40,12 @@ class NodeInfoSerializerTest : NodeBasedTest() {
     fun start() {
         val identityService = InMemoryIdentityService(trustRoot = DEV_TRUST_ROOT)
         keyManagementService = MockKeyManagementService(identityService, ALICE_KEY)
+        nodeInfoSerializer = NodeInfoSerializer(folder.root.toPath(), scheduler)
     }
 
     @Test
     fun `save a NodeInfo`() {
-        nodeInfoSerializer.saveToFile(folder.root.toPath(), nodeInfo, keyManagementService)
+        NodeInfoSerializer.saveToFile(folder.root.toPath(), nodeInfo, keyManagementService)
 
         assertEquals(1, folder.root.list().size)
         val fileName = folder.root.list()[0]
@@ -52,16 +57,45 @@ class NodeInfoSerializerTest : NodeBasedTest() {
 
     @Test
     fun `load an empty Directory`() {
-        assertEquals(0, nodeInfoSerializer.loadFromDirectory(folder.root.toPath()).size)
+        assertEquals(0, nodeInfoSerializer.loadFromDirectory().size)
     }
 
     @Test
     fun `load a non empty Directory`() {
-        val nodeInfoFolder = folder.newFolder(CordformNode.NODE_INFO_FOLDER)
-        nodeInfoSerializer.saveToFile(nodeInfoFolder.toPath(), nodeInfo, keyManagementService)
-        val nodeInfos = nodeInfoSerializer.loadFromDirectory(folder.root.toPath())
+        createNodeInfoFileInPath(nodeInfo)
+
+        val nodeInfos = nodeInfoSerializer.loadFromDirectory()
 
         assertEquals(1, nodeInfos.size)
         assertEquals(nodeInfo, nodeInfos.first())
+    }
+
+    @Test
+    fun `polling folder`() {
+        val testSubscriber = TestSubscriber<NodeInfo>()
+        nodeInfoSerializer.nodeInfoDirectory.createDirectories()
+
+        // Start polling with an empty folder.
+        nodeInfoSerializer.directoryObservable()
+                .subscribe(testSubscriber)
+        // Ensure the watch service is started.
+        scheduler.advanceTimeBy(1, TimeUnit.HOURS)
+
+        // Check no nodeInfos are read.
+        assertEquals(0, testSubscriber.valueCount)
+        createNodeInfoFileInPath(nodeInfo)
+
+        scheduler.advanceTimeBy(1, TimeUnit.HOURS)
+
+        // The same folder can be reported more than once, so take unique values.
+        val readNodes = testSubscriber.onNextEvents.distinct()
+        assertEquals(1, readNodes.size)
+        assertEquals(nodeInfo, readNodes.first())
+    }
+
+    // Write a nodeInfo under the right path.
+    private fun createNodeInfoFileInPath(nodeInfo: NodeInfo) {
+        NodeInfoSerializer.saveToFile(folder.root.toPath() / CordformNode.NODE_INFO_DIRECTORY,
+                nodeInfo, keyManagementService)
     }
 }

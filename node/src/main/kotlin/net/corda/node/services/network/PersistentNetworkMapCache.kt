@@ -1,11 +1,11 @@
 package net.corda.node.services.network
 
 import net.corda.core.concurrent.CordaFuture
-import net.corda.core.internal.bufferUntilSubscribed
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.core.internal.VisibleForTesting
+import net.corda.core.internal.bufferUntilSubscribed
 import net.corda.core.internal.concurrent.map
 import net.corda.core.internal.concurrent.openFuture
 import net.corda.core.messaging.DataFeed
@@ -41,6 +41,7 @@ import java.security.PublicKey
 import java.security.SignatureException
 import java.util.*
 import javax.annotation.concurrent.ThreadSafe
+import kotlin.collections.HashMap
 
 /**
  * Extremely simple in-memory cache of the network map.
@@ -88,6 +89,8 @@ open class PersistentNetworkMapCache(private val serviceHub: ServiceHubInternal)
                     .sortedBy { it.name.toString() }
         }
 
+    private val nodeInfoSerializer = NodeInfoSerializer(serviceHub.configuration.baseDirectory)
+
     init {
         loadFromFiles()
         serviceHub.database.transaction { loadFromDB() }
@@ -95,9 +98,11 @@ open class PersistentNetworkMapCache(private val serviceHub: ServiceHubInternal)
 
     private fun loadFromFiles() {
         logger.info("Loading network map from files..")
-        for (node in NodeInfoSerializer().loadFromDirectory(serviceHub.configuration.baseDirectory)) {
+        for (node in nodeInfoSerializer.loadFromDirectory()) {
             addNode(node)
         }
+
+        nodeInfoSerializer.directoryObservable().subscribe { node -> addNode(node)}
     }
 
     override fun getPartyInfo(party: Party): PartyInfo? {
