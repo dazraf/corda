@@ -169,17 +169,19 @@ object TwoPartyTradeFlow {
             progressTracker.currentStep = SIGNING
             val (ptx, cashSigningPubKeys) = assembleSharedTX(assetForSale, tradeRequest, buyerAnonymousIdentity)
 
+            // DOCSTART 6
             // Now sign the transaction with whatever keys we need to move the cash.
             val partSignedTx = serviceHub.signInitialTransaction(ptx, cashSigningPubKeys)
 
             // Sync up confidential identities in the transaction with our counterparty
-            subFlow(IdentitySyncFlow.Send(sellerSession, ptx.toWireTransaction()))
+            subFlow(IdentitySyncFlow.Send(sellerSession, ptx.toWireTransaction(serviceHub)))
 
             // Send the signed transaction to the seller, who must then sign it themselves and commit
             // it to the ledger by sending it to the notary.
             progressTracker.currentStep = COLLECTING_SIGNATURES
             val sellerSignature = subFlow(CollectSignatureFlow(partSignedTx, sellerSession, sellerSession.counterparty.owningKey))
             val twiceSignedTx = partSignedTx + sellerSignature
+            // DOCEND 6
 
             // Notarise and record the transaction.
             progressTracker.currentStep = RECORDING
@@ -202,8 +204,8 @@ object TwoPartyTradeFlow {
 
                 // Register the identity we're about to send payment to. This shouldn't be the same as the asset owner
                 // identity, so that anonymity is enforced.
-                val wellKnownPayToIdentity = serviceHub.identityService.verifyAndRegisterIdentity(it.payToIdentity)
-                require(wellKnownPayToIdentity?.party == sellerSession.counterparty) { "Well known identity to pay to must match counterparty identity" }
+                val wellKnownPayToIdentity = serviceHub.identityService.verifyAndRegisterIdentity(it.payToIdentity) ?: it.payToIdentity
+                require(wellKnownPayToIdentity.party == sellerSession.counterparty) { "Well known identity to pay to must match counterparty identity" }
 
                 if (it.price > acceptablePrice)
                     throw UnacceptablePriceException(it.price)

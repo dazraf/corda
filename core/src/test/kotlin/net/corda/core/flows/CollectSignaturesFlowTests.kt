@@ -5,14 +5,14 @@ import net.corda.core.contracts.Command
 import net.corda.core.contracts.StateAndContract
 import net.corda.core.contracts.requireThat
 import net.corda.core.identity.Party
+import net.corda.core.identity.excludeHostNode
+import net.corda.core.identity.groupAbstractPartyByWellKnownParty
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.getOrThrow
 import net.corda.core.utilities.unwrap
 import net.corda.node.internal.StartedNode
-import net.corda.testing.MINI_CORP_KEY
-import net.corda.testing.chooseIdentity
-import net.corda.testing.chooseIdentityAndCert
+import net.corda.testing.*
 import net.corda.testing.contracts.DUMMY_PROGRAM_ID
 import net.corda.testing.contracts.DummyContract
 import net.corda.testing.getDefaultNotary
@@ -30,9 +30,12 @@ class CollectSignaturesFlowTests {
     lateinit var b: StartedNode<MockNetwork.MockNode>
     lateinit var c: StartedNode<MockNetwork.MockNode>
     lateinit var notary: Party
+    lateinit var services: MockServices
 
     @Before
     fun setup() {
+        setCordappPackages("net.corda.testing.contracts")
+        services = MockServices()
         mockNet = MockNetwork()
         val nodes = mockNet.createSomeNodes(3)
         a = nodes.partyNodes[0]
@@ -46,6 +49,7 @@ class CollectSignaturesFlowTests {
     @After
     fun tearDown() {
         mockNet.stopNodes()
+        unsetCordappPackages()
     }
 
     private fun registerFlowOnAllNodes(flowClass: KClass<out FlowLogic<*>>) {
@@ -112,7 +116,7 @@ class CollectSignaturesFlowTests {
                 val command = Command(DummyContract.Commands.Create(), myInputKeys)
                 val builder = TransactionBuilder(notary).withItems(StateAndContract(state, DUMMY_PROGRAM_ID), command)
                 val ptx = serviceHub.signInitialTransaction(builder)
-                val sessions = serviceHub.excludeMe(serviceHub.groupAbstractPartyByWellKnownParty(state.owners)).map { initiateFlow(it.key) }
+                val sessions = excludeHostNode(serviceHub, groupAbstractPartyByWellKnownParty(serviceHub, state.owners)).map { initiateFlow(it.key) }
                 val stx = subFlow(CollectSignaturesFlow(ptx, sessions, myInputKeys))
                 return subFlow(FinalityFlow(stx))
             }

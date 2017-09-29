@@ -1,5 +1,6 @@
 package net.corda.testing.node
 
+import net.corda.core.cordapp.CordappProvider
 import net.corda.core.crypto.*
 import net.corda.core.flows.StateMachineRunId
 import net.corda.core.identity.PartyAndCertificate
@@ -11,8 +12,8 @@ import net.corda.core.schemas.MappedSchema
 import net.corda.core.serialization.SerializeAsToken
 import net.corda.core.serialization.SingletonSerializeAsToken
 import net.corda.core.transactions.SignedTransaction
-import net.corda.core.utilities.NonEmptySet
 import net.corda.node.VersionInfo
+import net.corda.node.internal.cordapp.CordappLoader
 import net.corda.node.services.api.StateMachineRecordedTransactionMappingStorage
 import net.corda.node.services.api.WritableTransactionStorage
 import net.corda.node.services.identity.InMemoryIdentityService
@@ -23,7 +24,6 @@ import net.corda.node.services.persistence.InMemoryStateMachineRecordedTransacti
 import net.corda.node.services.schema.HibernateObserver
 import net.corda.node.services.schema.NodeSchemaService
 import net.corda.node.services.transactions.InMemoryTransactionVerifierService
-import net.corda.node.services.vault.HibernateVaultQueryImpl
 import net.corda.node.services.vault.NodeVaultService
 import net.corda.node.utilities.CordaPersistence
 import net.corda.node.utilities.configureDatabase
@@ -38,15 +38,11 @@ import java.sql.Connection
 import java.time.Clock
 import java.util.*
 
-// TODO: We need a single, rationalised unit testing environment that is usable for everything. Fix this!
-// That means it probably shouldn't be in the 'core' module, which lacks enough code to create a realistic test env.
-
 /**
  * A singleton utility that only provides a mock identity, key and storage service. However, this is sufficient for
  * building chains of transactions and verifying them. It isn't sufficient for testing flows however.
  */
-open class MockServices(vararg val keys: KeyPair) : ServiceHub {
-
+open class MockServices(cordappPackages: List<String> = emptyList(), vararg val keys: KeyPair) : ServiceHub {
     companion object {
 
         @JvmStatic
@@ -100,14 +96,15 @@ open class MockServices(vararg val keys: KeyPair) : ServiceHub {
         @JvmStatic
         fun makeTestDatabaseAndMockServices(customSchemas: Set<MappedSchema> = emptySet(),
                                             keys: List<KeyPair> = listOf(MEGA_CORP_KEY),
-                                            createIdentityService: () -> IdentityService = { makeTestIdentityService() }): Pair<CordaPersistence, MockServices> {
+                                            createIdentityService: () -> IdentityService = { makeTestIdentityService() },
+                                            cordappPackages: List<String> = emptyList()): Pair<CordaPersistence, MockServices> {
             val dataSourceProps = makeTestDataSourceProperties()
             val databaseProperties = makeTestDatabaseProperties()
             val createSchemaService = { NodeSchemaService(customSchemas) }
             val identityServiceRef: IdentityService by lazy { createIdentityService() }
             val database = configureDatabase(dataSourceProps, databaseProperties, createSchemaService, { identityServiceRef })
             val mockService = database.transaction {
-                object : MockServices(*(keys.toTypedArray())) {
+                object : MockServices(cordappPackages, *(keys.toTypedArray())) {
                     override val identityService: IdentityService = database.transaction { identityServiceRef }
                     override val vaultService: VaultService = makeVaultService(database.hibernateConfig)
 
@@ -119,8 +116,6 @@ open class MockServices(vararg val keys: KeyPair) : ServiceHub {
                         (vaultService as NodeVaultService).notifyAll(txs.map { it.tx })
                     }
 
-                    override val vaultQueryService: VaultQueryService = HibernateVaultQueryImpl(database.hibernateConfig, vaultService)
-
                     override fun jdbcSession(): Connection = database.createSession()
                 }
             }
@@ -128,7 +123,9 @@ open class MockServices(vararg val keys: KeyPair) : ServiceHub {
         }
     }
 
-    constructor() : this(generateKeyPair())
+    constructor(vararg keys: KeyPair) : this(emptyList(), *keys)
+
+    constructor() : this(emptyList(), generateKeyPair())
 
     val key: KeyPair get() = keys.first()
 
@@ -141,7 +138,7 @@ open class MockServices(vararg val keys: KeyPair) : ServiceHub {
         }
     }
 
-    override val attachments: AttachmentStorage = MockAttachmentStorage()
+    final override val attachments: AttachmentStorage = MockAttachmentStorage()
     override val validatedTransactions: WritableTransactionStorage = MockTransactionStorage()
     val stateMachineRecordedTransactionMapping: StateMachineRecordedTransactionMappingStorage = MockStateMachineRecordedTransactionMappingStorage()
     override val identityService: IdentityService = InMemoryIdentityService(MOCK_IDENTITIES, trustRoot = DEV_TRUST_ROOT)
@@ -149,7 +146,6 @@ open class MockServices(vararg val keys: KeyPair) : ServiceHub {
 
     override val vaultService: VaultService get() = throw UnsupportedOperationException()
     override val contractUpgradeService: ContractUpgradeService get() = throw UnsupportedOperationException()
-    override val vaultQueryService: VaultQueryService get() = throw UnsupportedOperationException()
     override val networkMapCache: NetworkMapCache get() = throw UnsupportedOperationException()
     override val clock: Clock get() = Clock.systemUTC()
     override val myInfo: NodeInfo get() {
@@ -157,11 +153,13 @@ open class MockServices(vararg val keys: KeyPair) : ServiceHub {
         return NodeInfo(emptyList(), listOf(identity), 1,  serial = 1L)
     }
     override val transactionVerifierService: TransactionVerifierService get() = InMemoryTransactionVerifierService(2)
+    val mockCordappProvider: MockCordappProvider = MockCordappProvider(CordappLoader.createWithTestPackages(cordappPackages + CordappLoader.testPackages)).start(attachments) as MockCordappProvider
+    override val cordappProvider: CordappProvider = mockCordappProvider
 
     lateinit var hibernatePersister: HibernateObserver
 
     fun makeVaultService(hibernateConfig: HibernateConfiguration = HibernateConfiguration( { NodeSchemaService() }, makeTestDatabaseProperties(), { identityService })): VaultService {
-        val vaultService = NodeVaultService(this)
+        val vaultService = NodeVaultService(this, hibernateConfig)
         hibernatePersister = HibernateObserver(vaultService.rawUpdates, hibernateConfig)
         return vaultService
     }

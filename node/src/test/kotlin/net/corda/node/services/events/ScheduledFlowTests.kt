@@ -5,7 +5,7 @@ import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.*
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
-import net.corda.core.node.services.VaultQueryService
+import net.corda.core.node.services.VaultService
 import net.corda.core.node.services.queryBy
 import net.corda.core.node.services.vault.DEFAULT_PAGE_NUM
 import net.corda.core.node.services.vault.PageSpecification
@@ -19,14 +19,13 @@ import net.corda.node.services.network.NetworkMapService
 import net.corda.node.services.statemachine.StateMachineManager
 import net.corda.node.services.transactions.ValidatingNotaryService
 import net.corda.nodeapi.internal.ServiceInfo
-import net.corda.testing.DUMMY_NOTARY
-import net.corda.testing.chooseIdentity
+import net.corda.testing.*
 import net.corda.testing.contracts.DUMMY_PROGRAM_ID
 import net.corda.testing.dummyCommand
 import net.corda.testing.getDefaultNotary
 import net.corda.testing.node.MockNetwork
 import org.junit.After
-import org.junit.Assert.assertTrue
+import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import java.time.Instant
@@ -34,7 +33,7 @@ import kotlin.test.assertEquals
 
 class ScheduledFlowTests {
     companion object {
-        val PAGE_SIZE = 20
+        const val PAGE_SIZE = 20
         val SORTING = Sort(listOf(Sort.SortColumn(SortAttribute.Standard(Sort.CommonStateAttribute.STATE_REF_TXN_ID), Sort.Direction.DESC)))
     }
 
@@ -97,6 +96,7 @@ class ScheduledFlowTests {
 
     @Before
     fun setup() {
+        setCordappPackages("net.corda.testing.contracts")
         mockNet = MockNetwork(threadPerNode = true)
         notaryNode = mockNet.createNode(
                 legalName = DUMMY_NOTARY.name,
@@ -114,6 +114,7 @@ class ScheduledFlowTests {
     @After
     fun cleanUp() {
         mockNet.stopNodes()
+        unsetCordappPackages()
     }
 
     @Test
@@ -129,13 +130,13 @@ class ScheduledFlowTests {
         nodeA.services.startFlow(InsertInitialStateFlow(nodeB.info.chooseIdentity()))
         mockNet.waitQuiescent()
         val stateFromA = nodeA.database.transaction {
-            nodeA.services.vaultQueryService.queryBy<ScheduledState>().states.single()
+            nodeA.services.vaultService.queryBy<ScheduledState>().states.single()
         }
         val stateFromB = nodeB.database.transaction {
-            nodeB.services.vaultQueryService.queryBy<ScheduledState>().states.single()
+            nodeB.services.vaultService.queryBy<ScheduledState>().states.single()
         }
         assertEquals(1, countScheduledFlows)
-        assertEquals(stateFromA, stateFromB, "Must be same copy on both nodes")
+        assertEquals("Must be same copy on both nodes", stateFromA, stateFromB)
         assertTrue("Must be processed", stateFromB.state.data.processed)
     }
 
@@ -154,12 +155,12 @@ class ScheduledFlowTests {
 
         // Convert the states into maps to make error reporting easier
         val statesFromA: List<StateAndRef<ScheduledState>> = nodeA.database.transaction {
-            queryStatesWithPaging(nodeA.services.vaultQueryService)
+            queryStatesWithPaging(nodeA.services.vaultService)
         }
         val statesFromB: List<StateAndRef<ScheduledState>> = nodeB.database.transaction {
-            queryStatesWithPaging(nodeB.services.vaultQueryService)
+            queryStatesWithPaging(nodeB.services.vaultService)
         }
-        assertEquals(2 * N, statesFromA.count(), "Expect all states to be present")
+        assertEquals("Expect all states to be present",2 * N, statesFromA.count())
         statesFromA.forEach { ref ->
             if (ref !in statesFromB) {
                 throw IllegalStateException("State $ref is only present on node A.")
@@ -170,7 +171,7 @@ class ScheduledFlowTests {
                 throw IllegalStateException("State $ref is only present on node B.")
             }
         }
-        assertEquals(statesFromA, statesFromB, "Expect identical data on both nodes")
+        assertEquals("Expect identical data on both nodes", statesFromA, statesFromB)
         assertTrue("Expect all states have run the scheduled task", statesFromB.all { it.state.data.processed })
     }
 
@@ -180,13 +181,13 @@ class ScheduledFlowTests {
      *
      * @return states ordered by the transaction ID.
      */
-    private fun queryStatesWithPaging(vaultQueryService: VaultQueryService): List<StateAndRef<ScheduledState>> {
+    private fun queryStatesWithPaging(vaultService: VaultService): List<StateAndRef<ScheduledState>> {
         // DOCSTART VaultQueryExamplePaging
         var pageNumber = DEFAULT_PAGE_NUM
         val states = mutableListOf<StateAndRef<ScheduledState>>()
         do {
             val pageSpec = PageSpecification(pageSize = PAGE_SIZE, pageNumber = pageNumber)
-            val results = vaultQueryService.queryBy<ScheduledState>(VaultQueryCriteria(), pageSpec, SORTING)
+            val results = vaultService.queryBy<ScheduledState>(VaultQueryCriteria(), pageSpec, SORTING)
             states.addAll(results.states)
             pageNumber++
         } while ((pageSpec.pageSize * (pageNumber)) <= results.totalStatesAvailable)

@@ -3,8 +3,10 @@ package net.corda.core.transactions
 import net.corda.core.contracts.*
 import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.Party
+import net.corda.core.internal.UpgradeCommand
 import net.corda.core.internal.castIfPossible
 import net.corda.core.serialization.CordaSerializable
+import java.security.PublicKey
 import java.util.*
 import java.util.function.Predicate
 
@@ -61,7 +63,35 @@ data class LedgerTransaction(
      * @throws TransactionVerificationException if anything goes wrong.
      */
     @Throws(TransactionVerificationException::class)
-    fun verify() = verifyContracts()
+    fun verify() {
+        verifyConstraints()
+        // TODO: make contract upgrade transactions have a separate type
+        if (commands.any { it.value is UpgradeCommand }) {
+            verifyContractUpgrade()
+        }
+        else {
+            verifyContracts()
+        }
+    }
+
+    /**
+     * Verify that all contract constraints are valid for each state before running any contract code
+     *
+     * @throws TransactionVerificationException if the constraints fail to verify
+     */
+    private fun verifyConstraints() {
+        val contractAttachments = attachments.filterIsInstance<ContractAttachment>()
+        (inputs.map { it.state } + outputs).forEach { state ->
+            // Ordering of attachments matters - if two attachments contain the same named contract then the second
+            // will be shadowed by the first.
+            val contractAttachment = contractAttachments.find { it.contract == state.contract }
+                    ?: throw TransactionVerificationException.MissingAttachmentRejection(id, state.contract)
+
+            if (!state.constraint.isSatisfiedBy(contractAttachment)) {
+                throw TransactionVerificationException.ContractConstraintRejection(id, state.contract)
+            }
+        }
+    }
 
     /**
      * Check the transaction is contract-valid by running the verify() for each input and output state contract.
@@ -71,14 +101,15 @@ data class LedgerTransaction(
         val contracts = (inputs.map { it.state.contract } + outputs.map { it.contract }).toSet()
         for (contractClassName in contracts) {
             val contract = try {
+                assert(javaClass.classLoader == ClassLoader.getSystemClassLoader())
                 javaClass.classLoader.loadClass(contractClassName).asSubclass(Contract::class.java).getConstructor().newInstance()
-            } catch(e: ClassNotFoundException) {
+            } catch (e: ClassNotFoundException) {
                 throw TransactionVerificationException.ContractCreationError(id, contractClassName, e)
             }
 
             try {
                 contract.verify(this)
-            } catch(e: Throwable) {
+            } catch (e: Throwable) {
                 throw TransactionVerificationException.ContractRejection(id, contract, e)
             }
         }
@@ -127,6 +158,25 @@ data class LedgerTransaction(
                         encumbranceIndex,
                         TransactionVerificationException.Direction.OUTPUT)
             }
+        }
+    }
+
+    private fun verifyContractUpgrade() {
+        // Contract Upgrade transaction should have 1 input, 1 output and 1 command.
+        val input = inputs.single().state
+        val output = outputs.single()
+        val commandData = commandsOfType<UpgradeCommand>().single()
+
+        val command = commandData.value
+        val participantKeys: Set<PublicKey> = input.data.participants.map { it.owningKey }.toSet()
+        val keysThatSigned: Set<PublicKey> = commandData.signers.toSet()
+        @Suppress("UNCHECKED_CAST")
+        val upgradedContract = javaClass.classLoader.loadClass(command.upgradedContractClass).newInstance() as UpgradedContract<ContractState, *>
+        requireThat {
+            "The signing keys include all participant keys" using keysThatSigned.containsAll(participantKeys)
+            "Inputs state reference the legacy contract" using (input.contract == upgradedContract.legacyContract)
+            "Outputs state reference the upgraded contract" using (output.contract == command.upgradedContractClass)
+            "Output state must be an upgraded version of the input state" using (output.data == upgradedContract.upgrade(input.data))
         }
     }
 

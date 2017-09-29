@@ -12,6 +12,10 @@ UNRELEASED
 Release 1.0
 -----------
 
+* ``Cordapp`` now has a name field for identifying CorDapps and all CorDapp names are printed to console at startup.
+
+* Java 8 serializable lambdas now work property with Kryo during check-pointing.
+
 * String constants have been marked as ``const`` type in Kotlin, eliminating cases where functions of the form
   ``get<constant name>()`` were created for the Java API. These can now be referenced by their name directly.
 
@@ -26,8 +30,11 @@ Release 1.0
 * Added X509EdDSAEngine to intercept and rewrite EdDSA public keys wrapped in X509Key instances. This corrects an issue
   with verifying certificate paths loaded from a Java Keystore where they contain EdDSA keys.
 
-* generateSpend() now creates a new confidential identity for the change address rather than using the identity of the
-  input state owner.
+* Confidential identities are now complete:
+   * The identity negotiation flow is now called ``SwapIdentitiesFlow``, renamed from ``TransactionKeyFlow``.
+   * generateSpend() now creates a new confidential identity for the change address rather than using the identity of the
+     input state owner.
+   * Please see the documentation :doc:`key-concepts-identity` and :doc:`api-identity` for more details.
 
 * Remove the legacy web front end from the SIMM demo.
 

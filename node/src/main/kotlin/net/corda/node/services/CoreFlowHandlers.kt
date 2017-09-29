@@ -2,7 +2,6 @@ package net.corda.node.services
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.contracts.ContractState
-import net.corda.core.contracts.UpgradeCommand
 import net.corda.core.contracts.UpgradedContract
 import net.corda.core.contracts.requireThat
 import net.corda.core.flows.*
@@ -58,15 +57,12 @@ class ContractUpgradeHandler(otherSide: FlowSession) : AbstractStateReplacementF
         val authorisedUpgrade = serviceHub.contractUpgradeService.getAuthorisedContractUpgrade(oldStateAndRef.ref) ?:
                 throw IllegalStateException("Contract state upgrade is unauthorised. State hash : ${oldStateAndRef.ref}")
         val proposedTx = stx.tx
-        val expectedTx = ContractUpgradeUtils.assembleBareTx(oldStateAndRef, proposal.modification, proposedTx.privacySalt).toWireTransaction()
+        val expectedTx = ContractUpgradeUtils.assembleBareTx(oldStateAndRef, proposal.modification, proposedTx.privacySalt).toWireTransaction(serviceHub)
         requireThat {
             "The instigator is one of the participants" using (initiatingSession.counterparty in oldStateAndRef.state.data.participants)
             "The proposed upgrade ${proposal.modification.javaClass} is a trusted upgrade path" using (proposal.modification.name == authorisedUpgrade)
             "The proposed tx matches the expected tx for this upgrade" using (proposedTx == expectedTx)
         }
-        ContractUpgradeFlow.verify(
-                oldStateAndRef.state,
-                expectedTx.outRef<ContractState>(0).state,
-                expectedTx.toLedgerTransaction(serviceHub).commandsOfType<UpgradeCommand>().single())
+        proposedTx.toLedgerTransaction(serviceHub).verify()
     }
 }
