@@ -1,0 +1,12 @@
+{
+  "config": {
+    "nodes": {
+      "Bank A": {
+        "port": 40000
+      },
+      "Bank B": {
+        "port": 40001
+      }
+    }
+  }
+}

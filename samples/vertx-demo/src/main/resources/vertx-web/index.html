@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="jquery-3.2.1.min.js"></script>
+</head>
+<body>
+<h1 id="node-id">Node</h1>
+
+<div>
+  <h1>Issue Currency</h1>
+  <form id="issuanceForm">
+    <label for="amount">Amount (GBP)</label>
+    <input id="amount" name="amount" type="number" min="1" value="100">
+    <input id="submit" type="submit" value="Issue">
+  </form>
+</div>
+
+<div>
+  <h1>Event Stream</h1>
+  <textarea title="Event Stream">
+
+  </textarea>
+</div>
+<script>
+  $(document).ready(function() {
+    retrieveNodeName()
+    $("#issuanceForm").submit(function(e) {
+      const amount = parseInt($('#amount').val());
+      console.log(amount);
+      $.ajax({
+        url: "/api/issuance",
+        type: "post",
+        data: JSON.stringify({ amount: parseInt(amount) }),
+        success: function(response) {
+          console.log(response)
+        },
+        error: function(error) {
+          console.log(error)
+        }
+      });
+      return false;
+    })
+  });
+
+  function retrieveNodeName() {
+    $.get("/api/nodes/me", function(data) {
+      const org = data.organisation;
+      $('#node-id').text(org)
+    });
+  }
+</script>
+</body>
+</html>

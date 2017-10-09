@@ -1,0 +1,145 @@
+apply plugin: 'java'
+apply plugin: 'kotlin'
+apply plugin: 'idea'
+apply plugin: 'net.corda.plugins.quasar-utils'
+apply plugin: 'net.corda.plugins.publish-utils'
+apply plugin: 'net.corda.plugins.cordformation'
+apply plugin: 'maven-publish'
+
+ext.vertx_version = '3.4.2'
+
+sourceSets {
+    main {
+        resources {
+            srcDir "config/dev"
+        }
+    }
+    test {
+        resources {
+            srcDir "config/test"
+        }
+    }
+    integrationTest {
+        kotlin {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += main.output + test.output
+            srcDir file('src/integration-test/kotlin')
+        }
+        resources {
+            srcDir "config/test"
+        }
+    }
+}
+
+configurations {
+    integrationTestCompile.extendsFrom testCompile
+    integrationTestRuntime.extendsFrom testRuntime
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+
+    compile("io.vertx:vertx-core:$vertx_version") {
+        exclude group: "io.netty"
+    }
+
+    compile("io.vertx:vertx-web:$vertx_version")
+    compile "io.vertx:vertx-web-client:$vertx_version"
+
+    compile("com.typesafe:config:1.3.1")
+    // The trader demo CorDapp depends upon Cash CorDapp features
+    cordapp project(':finance')
+
+    // Corda integration dependencies
+    cordaCompile project(path: ":node:capsule", configuration: 'runtimeArtifacts')
+//    cordaCompile project(path: ":webserver:webcapsule", configuration: 'runtimeArtifacts')
+    cordaCompile project(':core')
+    cordaCompile project(':node')
+
+    // Corda Plugins: dependent flows and services
+
+    testCompile project(':test-utils')
+    testCompile project(':node-driver')
+    testCompile "junit:junit:$junit_version"
+    testCompile "org.assertj:assertj-core:${assertj_version}"
+    testCompile "io.vertx:vertx-unit:$vertx_version"
+}
+
+task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
+    ext.rpcUsers = [['username': "demo", 'password': "demo", 'permissions': [
+        'StartFlow.net.corda.finance.flows.CashIssueFlow',
+        'StartFlow.net.corda.finance.flows.CashPaymentFlow',
+        'StartFlow.net.corda.traderdemo.flow.CommercialPaperIssueFlow',
+        'StartFlow.net.corda.traderdemo.flow.SellerFlow'
+    ]]]
+
+    directory "./build/nodes"
+    // This name "Notary" is hard-coded into TraderDemoClientApi so if you change it here, change it there too.
+    // In this demo the node that runs a standalone notary also acts as the network map server.
+    networkMap "O=Notary Service,L=Zurich,C=CH"
+    node {
+        name "O=Notary Service,L=Zurich,C=CH"
+        advertisedServices = ["corda.notary.validating"]
+        p2pPort 10002
+        cordapps = ["net.corda:finance:$corda_release_version"]
+    }
+    node {
+        name "O=Bank A,L=London,C=GB"
+        advertisedServices = []
+        p2pPort 10005
+        rpcPort 10006
+        cordapps = ["net.corda:finance:$corda_release_version"]
+        rpcUsers = ext.rpcUsers
+    }
+    node {
+        name "O=Bank B,L=New York,C=US"
+        advertisedServices = []
+        p2pPort 10008
+        rpcPort 10009
+        cordapps = ["net.corda:finance:$corda_release_version"]
+        rpcUsers = ext.rpcUsers
+    }
+}
+
+task integrationTest(type: Test, dependsOn: []) {
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+}
+
+idea {
+    module {
+        downloadJavadoc = true // defaults to false
+        downloadSources = true
+    }
+}
+
+publishing {
+    publications {
+        jarAndSources(MavenPublication) {
+            from components.java
+            artifactId 'traderdemo'
+
+            artifact sourceJar
+            artifact javadocJar
+        }
+    }
+}
+
+task startBrowsers(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'net.corda.vertxdemo.tasks.StartBrowsersKt'
+}
+
+task runBank(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'net.corda.traderdemo.TraderDemoKt'
+    args '--role'
+    args 'BANK'
+}
+
+task runSeller(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'net.corda.traderdemo.TraderDemoKt'
+    args '--role'
+    args 'SELLER'
+}
