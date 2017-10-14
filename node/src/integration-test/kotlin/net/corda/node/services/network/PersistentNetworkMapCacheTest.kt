@@ -1,8 +1,6 @@
 package net.corda.node.services.network
 
 import co.paralleluniverse.fibers.Suspendable
-import io.kotlintest.eventually
-import io.kotlintest.milliseconds
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
 import net.corda.core.flows.InitiatedBy
@@ -17,8 +15,8 @@ import net.corda.testing.*
 import net.corda.testing.node.NodeBasedTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
+import java.time.Duration
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
 import kotlin.test.assertTrue
@@ -114,7 +112,6 @@ class PersistentNetworkMapCacheTest : NodeBasedTest() {
         assertFails { startNode(CHARLIE.name, noNetworkMap = true).getOrThrow(2.seconds) }
     }
 
-    @Ignore("Unstable test that needs more work")
     @Test
     fun `new node joins network without network map started`() {
 
@@ -146,9 +143,11 @@ class PersistentNetworkMapCacheTest : NodeBasedTest() {
 
         // This is prediction of the longest time it will take to get the cluster into a stable state such that further
         // testing can be performed upon it
-        val maxInstabilityInterval = BRIDGE_RETRY_MS * allTheStartedNodesPopulation.size * 2
+        val maxInstabilityInterval = BRIDGE_RETRY_MS * allTheStartedNodesPopulation.size * 30
+        logger.info("Instability interval is set to: $maxInstabilityInterval ms")
 
-        eventually(maxInstabilityInterval.milliseconds) {
+        // TODO: Re-visit this sort of re-try for stable cluster once network map redesign is finished.
+        eventually<AssertionError, Unit>(Duration.ofMillis(maxInstabilityInterval)) {
             logger.info("Checking connectivity")
             checkConnectivity(listOf(otherNodes[0], nms)) // Checks connectivity from A to NMS.
             logger.info("Loading caches")
@@ -171,8 +170,7 @@ class PersistentNetworkMapCacheTest : NodeBasedTest() {
                     (customRetryIntervalMs?.let { mapOf("activeMQServer.bridge.retryIntervalMs" to it.toString()) } ?: emptyMap())
             if (party == DUMMY_NOTARY) {
                 startNetworkMapNode(party.name, configOverrides = configOverrides)
-            }
-            else {
+            } else {
                 startNode(party.name,
                         configOverrides = configOverrides,
                         noNetworkMap = noNetworkMap,
@@ -185,7 +183,7 @@ class PersistentNetworkMapCacheTest : NodeBasedTest() {
     private fun checkConnectivity(nodes: List<StartedNode<*>>) {
         nodes.forEach { node1 ->
             nodes.forEach { node2 ->
-                if(!(node1 === node2)) { // Do not check connectivity to itself
+                if (!(node1 === node2)) { // Do not check connectivity to itself
                     node2.internals.registerInitiatedFlow(SendBackFlow::class.java)
                     val resultFuture = node1.services.startFlow(SendFlow(node2.info.chooseIdentity())).resultFuture
                     assertThat(resultFuture.getOrThrow()).isEqualTo("Hello!")

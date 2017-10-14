@@ -76,8 +76,6 @@ Download a sample project
 1. Open a command prompt
 2. Clone the CorDapp example repo by running ``git clone https://github.com/corda/cordapp-example``
 3. Move into the cordapp-example folder by running ``cd cordapp-example``
-4. Retrieve a list of all the releases by running ``git branch -a --list``
-5. Check out the latest milestone release by running ``git checkout release-MX`` (where "X" is the latest milestone)
 
 Run from the command prompt
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -125,8 +123,6 @@ Download a sample project
 1. Open a terminal
 2. Clone the CorDapp example repo by running ``git clone https://github.com/corda/cordapp-example``
 3. Move into the cordapp-example folder by running ``cd cordapp-example``
-4. Retrieve a list of all the releases by running ``git branch -a --list``
-5. Check out the latest milestone release by running ``git checkout release-MX`` (where "X" is the latest milestone)
 
 Run from the terminal
 ^^^^^^^^^^^^^^^^^^^^^
@@ -165,9 +161,6 @@ And a simple example CorDapp for you to explore basic concepts is available here
 
 You can clone these repos to your local machine by running the command ``git clone [repo URL]``.
 
-By default, these repos will be on the unstable ``master`` branch. You should check out the latest milestone release
-instead by running ``git checkout release-MX`` (where “X” is the latest milestone).
-
 Next steps
 ----------
 The best way to check that everything is working fine is by taking a deeper look at the
@@ -176,7 +169,7 @@ The best way to check that everything is working fine is by taking a deeper look
 Next, you should read through :doc:`Corda Key Concepts <key-concepts>` to understand how Corda works.
 
 By then, you'll be ready to start writing your own CorDapps. Learn how to do this in the
-:doc:`Hello, World tutorial <hello-world-index>`. You may want to refer to the :doc:`API docs <api-index>` along the
+:doc:`Hello, World tutorial <hello-world-index>`. You may want to refer to the :doc:`API documentation <corda-api>` along the
 way.
 
 If you encounter any issues, please see the :doc:`troubleshooting` page, or get in touch with us on the

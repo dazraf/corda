@@ -36,11 +36,10 @@ class ResolveTransactionsFlowTest {
 
     @Before
     fun setup() {
-        setCordappPackages("net.corda.testing.contracts")
-        mockNet = MockNetwork()
+        mockNet = MockNetwork(cordappPackages = listOf("net.corda.testing.contracts"))
         notaryNode = mockNet.createNotaryNode()
-        megaCorpNode = mockNet.createPartyNode(notaryNode.network.myAddress, MEGA_CORP.name)
-        miniCorpNode = mockNet.createPartyNode(notaryNode.network.myAddress, MINI_CORP.name)
+        megaCorpNode = mockNet.createPartyNode(MEGA_CORP.name)
+        miniCorpNode = mockNet.createPartyNode(MINI_CORP.name)
         megaCorpNode.internals.registerInitiatedFlow(TestResponseFlow::class.java)
         miniCorpNode.internals.registerInitiatedFlow(TestResponseFlow::class.java)
         mockNet.runNetwork()
@@ -52,7 +51,6 @@ class ResolveTransactionsFlowTest {
     @After
     fun tearDown() {
         mockNet.stopNodes()
-        unsetCordappPackages()
     }
 // DOCEND 3
 

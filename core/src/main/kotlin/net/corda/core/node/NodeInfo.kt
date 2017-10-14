@@ -1,5 +1,6 @@
 package net.corda.core.node
 
+import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.serialization.CordaSerializable
@@ -35,10 +36,16 @@ data class NodeInfo(val addresses: List<NetworkHostAndPort>,
      * are porting code from earlier versions of Corda that expected a single party per node, just use the first item
      * in the returned list.
      */
-    val legalIdentities: List<Party> get() {
-        return _legalIdentities ?: legalIdentitiesAndCerts.map { it.party }.also { _legalIdentities = it }
-    }
+    val legalIdentities: List<Party>
+        get() {
+            return _legalIdentities ?: legalIdentitiesAndCerts.map { it.party }.also { _legalIdentities = it }
+        }
 
     /** Returns true if [party] is one of the identities of this node, else false. */
     fun isLegalIdentity(party: Party): Boolean = party in legalIdentities
+
+    fun identityFromX500Name(name: CordaX500Name): Party  {
+        val identity = legalIdentitiesAndCerts.singleOrNull { it.name == name } ?: throw IllegalArgumentException("Node does not have an identity \"$name\"")
+        return identity.party
+    }
 }

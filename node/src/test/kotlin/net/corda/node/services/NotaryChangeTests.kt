@@ -7,14 +7,13 @@ import net.corda.core.flows.NotaryFlow
 import net.corda.core.flows.StateReplacementException
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
+import net.corda.core.node.ServiceHub
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.transactions.WireTransaction
 import net.corda.core.utilities.getOrThrow
 import net.corda.core.utilities.seconds
 import net.corda.node.internal.StartedNode
-import net.corda.node.services.network.NetworkMapService
-import net.corda.node.services.transactions.ValidatingNotaryService
-import net.corda.nodeapi.internal.ServiceInfo
+import net.corda.node.services.api.ServiceHubInternal
 import net.corda.testing.*
 import net.corda.testing.contracts.DummyContract
 import net.corda.testing.node.MockNetwork
@@ -38,25 +37,20 @@ class NotaryChangeTests {
 
     @Before
     fun setUp() {
-        setCordappPackages("net.corda.testing.contracts")
-        mockNet = MockNetwork()
-        oldNotaryNode = mockNet.createNode(
-                legalName = DUMMY_NOTARY.name,
-                advertisedServices = *arrayOf(ServiceInfo(NetworkMapService.type), ServiceInfo(ValidatingNotaryService.type)))
-        clientNodeA = mockNet.createNode(networkMapAddress = oldNotaryNode.network.myAddress)
-        clientNodeB = mockNet.createNode(networkMapAddress = oldNotaryNode.network.myAddress)
-        newNotaryNode = mockNet.createNode(networkMapAddress = oldNotaryNode.network.myAddress, advertisedServices = ServiceInfo(ValidatingNotaryService.type))
-        mockNet.registerIdentities()
+        mockNet = MockNetwork(cordappPackages = listOf("net.corda.testing.contracts"))
+        oldNotaryNode = mockNet.createNotaryNode(legalName = DUMMY_NOTARY.name)
+        clientNodeA = mockNet.createNode()
+        clientNodeB = mockNet.createNode()
+        newNotaryNode = mockNet.createNotaryNode(legalName = DUMMY_NOTARY.name.copy(organisation = "Dummy Notary 2"))
         mockNet.runNetwork() // Clear network map registration messages
         oldNotaryNode.internals.ensureRegistered()
-        newNotaryParty = newNotaryNode.info.legalIdentities[1]
-        oldNotaryParty = oldNotaryNode.info.legalIdentities[1]
+        oldNotaryParty = newNotaryNode.services.networkMapCache.getNotary(DUMMY_NOTARY_SERVICE_NAME)!!
+        newNotaryParty = newNotaryNode.services.networkMapCache.getNotary(DUMMY_NOTARY_SERVICE_NAME.copy(organisation = "Dummy Notary 2"))!!
     }
 
     @After
     fun cleanUp() {
         mockNet.stopNodes()
-        unsetCordappPackages()
     }
 
     @Test
@@ -219,10 +213,10 @@ fun issueMultiPartyState(nodeA: StartedNode<*>, nodeB: StartedNode<*>, notaryNod
     return stx.tx.outRef(0)
 }
 
-fun issueInvalidState(node: StartedNode<*>, notary: Party): StateAndRef<DummyContract.SingleOwnerState> {
-    val tx = DummyContract.generateInitial(Random().nextInt(), notary, node.info.chooseIdentity().ref(0))
+fun issueInvalidState(services: ServiceHub, identity: Party, notary: Party): StateAndRef<DummyContract.SingleOwnerState> {
+    val tx = DummyContract.generateInitial(Random().nextInt(), notary, identity.ref(0))
     tx.setTimeWindow(Instant.now(), 30.seconds)
-    val stx = node.services.signInitialTransaction(tx)
-    node.services.recordTransactions(stx)
+    val stx = services.signInitialTransaction(tx)
+    services.recordTransactions(stx)
     return stx.tx.outRef(0)
 }

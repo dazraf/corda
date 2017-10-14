@@ -20,14 +20,15 @@ import java.util.*
 class ResolveTransactionsFlow(private val txHashes: Set<SecureHash>,
                               private val otherSide: FlowSession) : FlowLogic<List<SignedTransaction>>() {
     /**
-     * Resolves and validates the dependencies of the specified [signedTransaction]. Fetches the attachments, but does
-     * *not* validate or store the [signedTransaction] itself.
+     * Resolves and validates the dependencies of the specified [SignedTransaction]. Fetches the attachments, but does
+     * *not* validate or store the [SignedTransaction] itself.
      *
      * @return a list of verified [SignedTransaction] objects, in a depth-first order.
      */
     constructor(signedTransaction: SignedTransaction, otherSide: FlowSession) : this(dependencyIDs(signedTransaction), otherSide) {
         this.signedTransaction = signedTransaction
     }
+
     companion object {
         private fun dependencyIDs(stx: SignedTransaction) = stx.inputs.map { it.txhash }.toSet()
 

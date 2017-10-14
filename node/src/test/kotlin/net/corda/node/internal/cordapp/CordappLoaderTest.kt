@@ -1,5 +1,6 @@
 package net.corda.node.internal.cordapp
 
+import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.flows.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
@@ -7,22 +8,30 @@ import java.nio.file.Paths
 
 @InitiatingFlow
 class DummyFlow : FlowLogic<Unit>() {
-    override fun call() { }
+    @Suspendable
+    override fun call() {
+    }
 }
 
 @InitiatedBy(DummyFlow::class)
 class LoaderTestFlow(unusedSession: FlowSession) : FlowLogic<Unit>() {
-    override fun call() { }
+    @Suspendable
+    override fun call() {
+    }
 }
 
 @SchedulableFlow
 class DummySchedulableFlow : FlowLogic<Unit>() {
-    override fun call() { }
+    @Suspendable
+    override fun call() {
+    }
 }
 
 @StartableByRPC
 class DummyRPCFlow : FlowLogic<Unit>() {
-    override fun call() { }
+    @Suspendable
+    override fun call() {
+    }
 }
 
 class CordappLoaderTest {
@@ -55,8 +64,8 @@ class CordappLoaderTest {
         assertThat(actualCordapp.rpcFlows).isEmpty()
         assertThat(actualCordapp.schedulableFlows).isEmpty()
         assertThat(actualCordapp.services).isEmpty()
-        assertThat(actualCordapp.plugins).hasSize(1)
-        assertThat(actualCordapp.plugins.first().javaClass.name).isEqualTo("net.corda.finance.contracts.isolated.IsolatedPlugin")
+        assertThat(actualCordapp.serializationWhitelists).hasSize(1)
+        assertThat(actualCordapp.serializationWhitelists.first().javaClass.name).isEqualTo("net.corda.nodeapi.internal.serialization.DefaultWhitelist")
         assertThat(actualCordapp.jarPath).isEqualTo(isolatedJAR)
     }
 

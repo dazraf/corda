@@ -80,8 +80,8 @@ attachment JAR. This allows for trusting of attachments from trusted entities.
 Limitations
 -----------
 
-An ``AttachmentConstraint`` is verified by running the ``AttachmentConstraint.isSatisfiedBy`` method. When this is
-called it is provided only the relevant attachment by the transaction that is verifying it.
+An ``AttachmentConstraint`` is verified by running the ``AttachmentConstraint.isSatisfiedBy`` method. When this is called
+it is provided only the relevant attachment by the transaction that is verifying it.
 
 Testing
 -------
@@ -146,4 +146,4 @@ The driver takes a parameter called ``extraCordappPackagesToScan`` which is a li
 Full Nodes
 **********
 
-When testing against full nodes simply place your CorDapp into the plugins directory of the node.
+When testing against full nodes simply place your CorDapp into the cordapps directory of the node.

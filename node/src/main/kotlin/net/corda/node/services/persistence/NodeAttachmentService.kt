@@ -13,8 +13,8 @@ import net.corda.core.crypto.SecureHash
 import net.corda.core.node.services.AttachmentStorage
 import net.corda.core.serialization.*
 import net.corda.core.utilities.loggerFor
-import net.corda.node.utilities.DatabaseTransactionManager
 import net.corda.node.utilities.NODE_DATABASE_PREFIX
+import net.corda.node.utilities.currentDBSession
 import java.io.*
 import java.nio.file.Paths
 import java.util.jar.JarInputStream
@@ -29,7 +29,7 @@ class NodeAttachmentService(metrics: MetricRegistry) : AttachmentStorage, Single
 
     @Entity
     @Table(name = "${NODE_DATABASE_PREFIX}attachments",
-           indexes = arrayOf(Index(name = "att_id_idx", columnList = "att_id")))
+            indexes = arrayOf(Index(name = "att_id_idx", columnList = "att_id")))
     class DBAttachment(
             @Id
             @Column(name = "att_id", length = 65535)
@@ -50,7 +50,7 @@ class NodeAttachmentService(metrics: MetricRegistry) : AttachmentStorage, Single
     private val attachmentCount = metrics.counter("Attachments")
 
     init {
-        val session = DatabaseTransactionManager.current().session
+        val session = currentDBSession()
         val criteriaBuilder = session.criteriaBuilder
         val criteriaQuery = criteriaBuilder.createQuery(Long::class.java)
         criteriaQuery.select(criteriaBuilder.count(criteriaQuery.from(NodeAttachmentService.DBAttachment::class.java)))
@@ -69,7 +69,8 @@ class NodeAttachmentService(metrics: MetricRegistry) : AttachmentStorage, Single
      * around inside it, we haven't read the whole file, so we can't check the hash. But when copying it over the network
      * this will provide an additional safety check against user error.
      */
-    @VisibleForTesting @CordaSerializable
+    @VisibleForTesting
+    @CordaSerializable
     class HashCheckingStream(val expected: SecureHash.SHA256,
                              val expectedSize: Int,
                              input: InputStream,
@@ -110,16 +111,17 @@ class NodeAttachmentService(metrics: MetricRegistry) : AttachmentStorage, Single
         }
 
         private var _hash: HashCode? = null // Backing field for hash property
-        private val hash: HashCode get() {
-            var h = _hash
-            return if (h == null) {
-                h = stream.hash()
-                _hash = h
-                h
-            } else {
-                h
+        private val hash: HashCode
+            get() {
+                var h = _hash
+                return if (h == null) {
+                    h = stream.hash()
+                    _hash = h
+                    h
+                } else {
+                    h
+                }
             }
-        }
     }
 
     private class AttachmentImpl(override val id: SecureHash, dataLoader: () -> ByteArray, private val checkOnLoad: Boolean) : AbstractAttachment(dataLoader), SerializeAsToken {
@@ -138,7 +140,7 @@ class NodeAttachmentService(metrics: MetricRegistry) : AttachmentStorage, Single
     }
 
     override fun openAttachment(id: SecureHash): Attachment? {
-        val attachment = DatabaseTransactionManager.current().session.get(NodeAttachmentService.DBAttachment::class.java, id.toString())
+        val attachment = currentDBSession().get(NodeAttachmentService.DBAttachment::class.java, id.toString())
         attachment?.let {
             return AttachmentImpl(id, { attachment.content }, checkAttachmentsOnLoad)
         }
@@ -159,7 +161,7 @@ class NodeAttachmentService(metrics: MetricRegistry) : AttachmentStorage, Single
         checkIsAValidJAR(ByteArrayInputStream(bytes))
         val id = SecureHash.SHA256(hs.hash().asBytes())
 
-        val session = DatabaseTransactionManager.current().session
+        val session = currentDBSession()
         val criteriaBuilder = session.criteriaBuilder
         val criteriaQuery = criteriaBuilder.createQuery(Long::class.java)
         val attachments = criteriaQuery.from(NodeAttachmentService.DBAttachment::class.java)

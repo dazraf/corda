@@ -8,8 +8,7 @@ import net.corda.finance.contracts.CommercialPaper
 import net.corda.finance.contracts.ICommercialPaperState
 import net.corda.finance.contracts.asset.CASH
 import net.corda.finance.contracts.asset.Cash
-import net.corda.finance.contracts.asset.`issued by`
-import net.corda.finance.contracts.asset.`owned by`
+import net.corda.finance.contracts.asset.ownedBy
 import net.corda.testing.*
 import org.junit.Test
 
@@ -31,7 +30,7 @@ class CommercialPaperTest {
             transaction {
                 attachments(CP_PROGRAM_ID)
                 input(CP_PROGRAM_ID) { inState }
-                this.verifies()
+                verifies()
             }
         }
     }
@@ -46,7 +45,7 @@ class CommercialPaperTest {
                 input(CP_PROGRAM_ID) { inState }
                 command(MEGA_CORP_PUBKEY) { CommercialPaper.Commands.Move() }
                 attachments(CP_PROGRAM_ID)
-                this.verifies()
+                verifies()
             }
         }
     }
@@ -61,7 +60,7 @@ class CommercialPaperTest {
                 input(CP_PROGRAM_ID) { inState }
                 command(MEGA_CORP_PUBKEY) { CommercialPaper.Commands.Move() }
                 attachments(CP_PROGRAM_ID)
-                this `fails with` "the state is propagated"
+                `fails with`("the state is propagated")
             }
         }
     }
@@ -76,9 +75,9 @@ class CommercialPaperTest {
                 input(CP_PROGRAM_ID) { inState }
                 command(MEGA_CORP_PUBKEY) { CommercialPaper.Commands.Move() }
                 attachments(CP_PROGRAM_ID)
-                this `fails with` "the state is propagated"
+                `fails with`("the state is propagated")
                 output(CP_PROGRAM_ID, "alice's paper") { inState.withOwner(ALICE) }
-                this.verifies()
+                verifies()
             }
         }
     }
@@ -95,11 +94,11 @@ class CommercialPaperTest {
                     // The wrong pubkey.
                     command(BIG_CORP_PUBKEY) { CommercialPaper.Commands.Issue() }
                     timeWindow(TEST_TX_TIME)
-                    this `fails with` "output states are issued by a command signer"
+                    `fails with`("output states are issued by a command signer")
                 }
                 command(MEGA_CORP_PUBKEY) { CommercialPaper.Commands.Issue() }
                 timeWindow(TEST_TX_TIME)
-                this.verifies()
+                verifies()
             }
         }
     }
@@ -115,11 +114,11 @@ class CommercialPaperTest {
                 // The wrong pubkey.
                 command(BIG_CORP_PUBKEY) { CommercialPaper.Commands.Issue() }
                 timeWindow(TEST_TX_TIME)
-                this `fails with` "output states are issued by a command signer"
+                `fails with`("output states are issued by a command signer")
             }
             command(MEGA_CORP_PUBKEY) { CommercialPaper.Commands.Issue() }
             timeWindow(TEST_TX_TIME)
-            this.verifies()
+            verifies()
         }
     }
     // DOCEND 7
@@ -132,7 +131,7 @@ class CommercialPaperTest {
         ledger {
             unverifiedTransaction {
                 attachments(Cash.PROGRAM_ID)
-                output(Cash.PROGRAM_ID, "alice's $900", 900.DOLLARS.CASH `issued by` issuer `owned by` ALICE)
+                output(Cash.PROGRAM_ID, "alice's $900", 900.DOLLARS.CASH issuedBy issuer ownedBy ALICE)
             }
 
             // Some CP is issued onto the ledger by MegaCorp.
@@ -141,18 +140,18 @@ class CommercialPaperTest {
                 command(MEGA_CORP_PUBKEY) { CommercialPaper.Commands.Issue() }
                 attachments(CP_PROGRAM_ID)
                 timeWindow(TEST_TX_TIME)
-                this.verifies()
+                verifies()
             }
 
 
             transaction("Trade") {
                 input("paper")
                 input("alice's $900")
-                output(Cash.PROGRAM_ID, "borrowed $900") { 900.DOLLARS.CASH `issued by` issuer `owned by` MEGA_CORP }
+                output(Cash.PROGRAM_ID, "borrowed $900") { 900.DOLLARS.CASH issuedBy issuer ownedBy MEGA_CORP }
                 output(CP_PROGRAM_ID, "alice's paper") { "paper".output<ICommercialPaperState>().withOwner(ALICE) }
                 command(ALICE_PUBKEY) { Cash.Commands.Move() }
                 command(MEGA_CORP_PUBKEY) { CommercialPaper.Commands.Move() }
-                this.verifies()
+                verifies()
             }
         }
     }
@@ -165,7 +164,7 @@ class CommercialPaperTest {
         ledger {
             unverifiedTransaction {
                 attachments(Cash.PROGRAM_ID)
-                output(Cash.PROGRAM_ID, "alice's $900", 900.DOLLARS.CASH `issued by` issuer `owned by` ALICE)
+                output(Cash.PROGRAM_ID, "alice's $900", 900.DOLLARS.CASH issuedBy issuer ownedBy ALICE)
             }
 
             // Some CP is issued onto the ledger by MegaCorp.
@@ -174,17 +173,17 @@ class CommercialPaperTest {
                 command(MEGA_CORP_PUBKEY) { CommercialPaper.Commands.Issue() }
                 attachments(CP_PROGRAM_ID)
                 timeWindow(TEST_TX_TIME)
-                this.verifies()
+                verifies()
             }
 
             transaction("Trade") {
                 input("paper")
                 input("alice's $900")
-                output(Cash.PROGRAM_ID, "borrowed $900") { 900.DOLLARS.CASH `issued by` issuer `owned by` MEGA_CORP }
+                output(Cash.PROGRAM_ID, "borrowed $900") { 900.DOLLARS.CASH issuedBy issuer ownedBy MEGA_CORP }
                 output(CP_PROGRAM_ID, "alice's paper") { "paper".output<ICommercialPaperState>().withOwner(ALICE) }
                 command(ALICE_PUBKEY) { Cash.Commands.Move() }
                 command(MEGA_CORP_PUBKEY) { CommercialPaper.Commands.Move() }
-                this.verifies()
+                verifies()
             }
 
             transaction {
@@ -192,10 +191,10 @@ class CommercialPaperTest {
                 // We moved a paper to another pubkey.
                 output(CP_PROGRAM_ID, "bob's paper") { "paper".output<ICommercialPaperState>().withOwner(BOB) }
                 command(MEGA_CORP_PUBKEY) { CommercialPaper.Commands.Move() }
-                this.verifies()
+                verifies()
             }
 
-            this.fails()
+            fails()
         }
     }
     // DOCEND 9
@@ -207,7 +206,7 @@ class CommercialPaperTest {
         ledger {
             unverifiedTransaction {
                 attachments(Cash.PROGRAM_ID)
-                output(Cash.PROGRAM_ID, "alice's $900", 900.DOLLARS.CASH `issued by` issuer `owned by` ALICE)
+                output(Cash.PROGRAM_ID, "alice's $900", 900.DOLLARS.CASH issuedBy issuer ownedBy ALICE)
             }
 
             // Some CP is issued onto the ledger by MegaCorp.
@@ -216,17 +215,17 @@ class CommercialPaperTest {
                 command(MEGA_CORP_PUBKEY) { CommercialPaper.Commands.Issue() }
                 attachments(CP_PROGRAM_ID)
                 timeWindow(TEST_TX_TIME)
-                this.verifies()
+                verifies()
             }
 
             transaction("Trade") {
                 input("paper")
                 input("alice's $900")
-                output(Cash.PROGRAM_ID, "borrowed $900") { 900.DOLLARS.CASH `issued by` issuer `owned by` MEGA_CORP }
+                output(Cash.PROGRAM_ID, "borrowed $900") { 900.DOLLARS.CASH issuedBy issuer ownedBy MEGA_CORP }
                 output(CP_PROGRAM_ID, "alice's paper") { "paper".output<ICommercialPaperState>().withOwner(ALICE) }
                 command(ALICE_PUBKEY) { Cash.Commands.Move() }
                 command(MEGA_CORP_PUBKEY) { CommercialPaper.Commands.Move() }
-                this.verifies()
+                verifies()
             }
 
             tweak {
@@ -235,12 +234,12 @@ class CommercialPaperTest {
                     // We moved a paper to another pubkey.
                     output(CP_PROGRAM_ID, "bob's paper") { "paper".output<ICommercialPaperState>().withOwner(BOB) }
                     command(MEGA_CORP_PUBKEY) { CommercialPaper.Commands.Move() }
-                    this.verifies()
+                    verifies()
                 }
-                this.fails()
+                fails()
             }
 
-            this.verifies()
+            verifies()
         }
     }
     // DOCEND 10

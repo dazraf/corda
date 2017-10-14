@@ -221,14 +221,14 @@ There are several ways to retrieve a notary from the network map:
 
     .. literalinclude:: ../../docs/source/example-code/src/main/kotlin/net/corda/docs/FlowCookbook.kt
         :language: kotlin
-        :start-after: DOCSTART 1
-        :end-before: DOCEND 1
-        :dedent: 12
+        :start-after: DOCSTART 01
+        :end-before: DOCEND 01
+        :dedent: 8
 
     .. literalinclude:: ../../docs/source/example-code/src/main/java/net/corda/docs/FlowCookbookJava.java
         :language: java
-        :start-after: DOCSTART 1
-        :end-before: DOCEND 1
+        :start-after: DOCSTART 01
+        :end-before: DOCEND 01
         :dedent: 12
 
 Specific counterparties
@@ -239,32 +239,14 @@ We can also use the network map to retrieve a specific counterparty:
 
     .. literalinclude:: ../../docs/source/example-code/src/main/kotlin/net/corda/docs/FlowCookbook.kt
         :language: kotlin
-        :start-after: DOCSTART 2
-        :end-before: DOCEND 2
-        :dedent: 12
+        :start-after: DOCSTART 02
+        :end-before: DOCEND 02
+        :dedent: 8
 
     .. literalinclude:: ../../docs/source/example-code/src/main/java/net/corda/docs/FlowCookbookJava.java
         :language: java
-        :start-after: DOCSTART 2
-        :end-before: DOCEND 2
-        :dedent: 12
-
-Specific services
-~~~~~~~~~~~~~~~~~
-Finally, we can use the map to identify nodes providing a specific service (e.g. a regulator or an oracle):
-
-.. container:: codeset
-
-    .. literalinclude:: ../../docs/source/example-code/src/main/kotlin/net/corda/docs/FlowCookbook.kt
-        :language: kotlin
-        :start-after: DOCSTART 3
-        :end-before: DOCEND 3
-        :dedent: 12
-
-    .. literalinclude:: ../../docs/source/example-code/src/main/java/net/corda/docs/FlowCookbookJava.java
-        :language: java
-        :start-after: DOCSTART 3
-        :end-before: DOCEND 3
+        :start-after: DOCSTART 02
+        :end-before: DOCEND 02
         :dedent: 12
 
 Communication between parties
@@ -295,7 +277,7 @@ InitiateFlow
         :language: kotlin
         :start-after: DOCSTART initiateFlow
         :end-before: DOCEND initiateFlow
-        :dedent: 12
+        :dedent: 8
 
     .. literalinclude:: ../../docs/source/example-code/src/main/java/net/corda/docs/FlowCookbookJava.java
         :language: java
@@ -318,14 +300,14 @@ Once we have a ``FlowSession`` object we can send arbitrary data to a counterpar
 
     .. literalinclude:: ../../docs/source/example-code/src/main/kotlin/net/corda/docs/FlowCookbook.kt
         :language: kotlin
-        :start-after: DOCSTART 4
-        :end-before: DOCEND 4
-        :dedent: 12
+        :start-after: DOCSTART 04
+        :end-before: DOCEND 04
+        :dedent: 8
 
     .. literalinclude:: ../../docs/source/example-code/src/main/java/net/corda/docs/FlowCookbookJava.java
         :language: java
-        :start-after: DOCSTART 4
-        :end-before: DOCEND 4
+        :start-after: DOCSTART 04
+        :end-before: DOCEND 04
         :dedent: 12
 
 The flow on the other side must eventually reach a corresponding ``receive`` call to get this message.
@@ -350,14 +332,14 @@ be what it appears to be! We must unwrap the ``UntrustworthyData`` using a lambd
 
     .. literalinclude:: ../../docs/source/example-code/src/main/kotlin/net/corda/docs/FlowCookbook.kt
         :language: kotlin
-        :start-after: DOCSTART 5
-        :end-before: DOCEND 5
-        :dedent: 12
+        :start-after: DOCSTART 05
+        :end-before: DOCEND 05
+        :dedent: 8
 
     .. literalinclude:: ../../docs/source/example-code/src/main/java/net/corda/docs/FlowCookbookJava.java
         :language: java
-        :start-after: DOCSTART 5
-        :end-before: DOCEND 5
+        :start-after: DOCSTART 05
+        :end-before: DOCEND 05
         :dedent: 12
 
 We're not limited to sending to and receiving from a single counterparty. A flow can send messages to as many parties
@@ -367,20 +349,21 @@ as it likes, and each party can invoke a different response flow:
 
     .. literalinclude:: ../../docs/source/example-code/src/main/kotlin/net/corda/docs/FlowCookbook.kt
         :language: kotlin
-        :start-after: DOCSTART 6
-        :end-before: DOCEND 6
-        :dedent: 12
+        :start-after: DOCSTART 06
+        :end-before: DOCEND 06
+        :dedent: 8
 
     .. literalinclude:: ../../docs/source/example-code/src/main/java/net/corda/docs/FlowCookbookJava.java
         :language: java
-        :start-after: DOCSTART 6
-        :end-before: DOCEND 6
+        :start-after: DOCSTART 06
+        :end-before: DOCEND 06
         :dedent: 12
 
-.. warning:: If you initiate several counter flows from the same ``@InitiatingFlow`` flow then on the receiving side you
-   must be prepared to be initiated by any of the corresponding ``initiateFlow()`` calls! A good way of handling this
-   ambiguity is to send as a first message a "role" message to the initiated flow, indicating which part of the
-   initiating flow the rest of the counter-flow should conform to.
+.. warning:: If you initiate several flows from the same ``@InitiatingFlow`` flow then on the receiving side you must be
+   prepared to be initiated by any of the corresponding ``initiateFlow()`` calls! A good way of handling this ambiguity
+   is to send as a first message a "role" message to the initiated flow, indicating which part of the initiating flow
+   the rest of the counter-flow should conform to. For example send an enum, and on the other side start with a switch
+   statement.
 
 SendAndReceive
 ~~~~~~~~~~~~~~
@@ -391,14 +374,14 @@ type of data sent doesn't need to match the type of the data received back:
 
     .. literalinclude:: ../../docs/source/example-code/src/main/kotlin/net/corda/docs/FlowCookbook.kt
         :language: kotlin
-        :start-after: DOCSTART 7
-        :end-before: DOCEND 7
-        :dedent: 12
+        :start-after: DOCSTART 07
+        :end-before: DOCEND 07
+        :dedent: 8
 
     .. literalinclude:: ../../docs/source/example-code/src/main/java/net/corda/docs/FlowCookbookJava.java
         :language: java
-        :start-after: DOCSTART 7
-        :end-before: DOCEND 7
+        :start-after: DOCSTART 07
+        :end-before: DOCEND 07
         :dedent: 12
 
 Counterparty response
@@ -416,30 +399,62 @@ Our side of the flow must mirror these calls. We could do this as follows:
 
     .. literalinclude:: ../../docs/source/example-code/src/main/kotlin/net/corda/docs/FlowCookbook.kt
         :language: kotlin
-        :start-after: DOCSTART 8
-        :end-before: DOCEND 8
-        :dedent: 12
+        :start-after: DOCSTART 08
+        :end-before: DOCEND 08
+        :dedent: 8
 
     .. literalinclude:: ../../docs/source/example-code/src/main/java/net/corda/docs/FlowCookbookJava.java
         :language: java
-        :start-after: DOCSTART 8
-        :end-before: DOCEND 8
+        :start-after: DOCSTART 08
+        :end-before: DOCEND 08
         :dedent: 12
 
-Porting from the old Party-based API
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Why sessions?
+^^^^^^^^^^^^^
 
 Before ``FlowSession`` s were introduced the send/receive API looked a bit different. They were functions on
 ``FlowLogic`` and took the address ``Party`` as argument. The platform internally maintained a mapping from ``Party`` to
 session, hiding sessions from the user completely.
 
-However we realised that this could introduce subtle bugs and security issues where sends meant for different sessions
-may end up in the same session if the target ``Party`` happens to be the same.
+Although this is a convenient API it introduces subtle issues where a message that was originally meant for a specific
+session may end up in another.
 
-Therefore the session concept is now exposed through ``FlowSession`` which disambiguates which communication sequence a
-message is intended for.
+Consider the following contrived example using the old ``Party`` based API:
 
-In the old API the first ``send`` or ``receive`` to a ``Party`` was the one kicking off the counterflow. This is now
+.. container:: codeset
+
+    .. literalinclude:: ../../docs/source/example-code/src/main/kotlin/net/corda/docs/LaunchSpaceshipFlow.kt
+        :language: kotlin
+        :start-after: DOCSTART LaunchSpaceshipFlow
+        :end-before: DOCEND LaunchSpaceshipFlow
+
+The intention of the flows is very clear: LaunchSpaceshipFlow asks the president whether a spaceship should be launched.
+It is expecting a boolean reply. The president in return first tells the secretary that they need coffee, which is also
+communicated with a boolean. Afterwards the president replies to the launcher that they don't want to launch.
+
+However the above can go horribly wrong when the ``launcher`` happens to be the same party ``getSecretary`` returns. In
+this case the boolean meant for the secretary will be received by the launcher!
+
+This indicates that ``Party`` is not a good identifier for the communication sequence, and indeed the ``Party`` based
+API may introduce ways for an attacker to fish for information and even trigger unintended control flow like in the
+above case.
+
+Hence we introduced ``FlowSession``, which identifies the communication sequence. With ``FlowSession`` s the above set
+of flows would look like this:
+
+.. container:: codeset
+
+    .. literalinclude:: ../../docs/source/example-code/src/main/kotlin/net/corda/docs/LaunchSpaceshipFlow.kt
+        :language: kotlin
+        :start-after: DOCSTART LaunchSpaceshipFlowCorrect
+        :end-before: DOCEND LaunchSpaceshipFlowCorrect
+
+Note how the president is now explicit about which session it wants to send to.
+
+Porting from the old Party-based API
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In the old API the first ``send`` or ``receive`` to a ``Party`` was the one kicking off the counter-flow. This is now
 explicit in the ``initiateFlow`` function call. To port existing code:
 
 .. container:: codeset
@@ -448,7 +463,7 @@ explicit in the ``initiateFlow`` function call. To port existing code:
         :language: kotlin
         :start-after: DOCSTART FlowSession porting
         :end-before: DOCEND FlowSession porting
-        :dedent: 12
+        :dedent: 8
 
     .. literalinclude:: ../../docs/source/example-code/src/main/java/net/corda/docs/FlowCookbookJava.java
         :language: java
@@ -456,28 +471,31 @@ explicit in the ``initiateFlow`` function call. To port existing code:
         :end-before: DOCEND FlowSession porting
         :dedent: 12
 
-
 Subflows
 --------
 
-Subflows are pieces of reusable flows that may be run by calling ``FlowLogic.subFlow``.
+Subflows are pieces of reusable flows that may be run by calling ``FlowLogic.subFlow``. There are two broad categories
+of subflows, inlined and initiating ones. The main difference lies in the counter-flow's starting method, initiating
+ones initiate counter-flows automatically, while inlined ones expect some parent counter-flow to run the inlined
+counter-part.
 
 Inlined subflows
 ^^^^^^^^^^^^^^^^
 
-Inlined subflows inherit their calling flow's type when initiating a new session with a counterparty. For example say
+Inlined subflows inherit their calling flow's type when initiating a new session with a counterparty. For example, say
 we have flow A calling an inlined subflow B, which in turn initiates a session with a party. The FlowLogic type used to
-determine which counterflow should be kicked off will be A, not B. Note that this means that the other side of this
-session must therefore be called explicitly in the kicked off flow as well.
+determine which counter-flow should be kicked off will be A, not B. Note that this means that the other side of this
+inlined flow must therefore be implemented explicitly in the kicked off flow as well. This may be done by calling a
+matching inlined counter-flow, or by implementing the other side explicitly in the kicked off parent flow.
 
 An example of such a flow is ``CollectSignaturesFlow``. It has a counter-flow ``SignTransactionFlow`` that isn't
-annotated with ``InitiatedBy``. This is because both of these flows are inlined, the kick-off relationship will be
+annotated with ``InitiatedBy``. This is because both of these flows are inlined; the kick-off relationship will be
 defined by the parent flows calling ``CollectSignaturesFlow`` and ``SignTransactionFlow``.
 
 In the code inlined subflows appear as regular ``FlowLogic`` instances, `without` either of the ``@InitiatingFlow`` or
 ``@InitiatedBy`` annotation.
 
-.. note:: Inlined flows aren't versioned, they inherit their parent flow's version.
+.. note:: Inlined flows aren't versioned; they inherit their parent flow's version.
 
 Initiating subflows
 ^^^^^^^^^^^^^^^^^^^
@@ -493,7 +511,7 @@ Core initiating subflows
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 Corda-provided initiating subflows are a little different to standard ones as they are versioned together with the
-platform, and their initiated counterflows are registered explicitly, so there is no need for the ``InitiatedBy``
+platform, and their initiated counter-flows are registered explicitly, so there is no need for the ``InitiatedBy``
 annotation.
 
 An example is the ``FinalityFlow``/``FinalityHandler`` flow pair.
@@ -504,8 +522,10 @@ Built-in subflows
 Corda provides a number of built-in flows that should be used for handling common tasks. The most important are:
 
 * ``CollectSignaturesFlow`` (inlined), which should be used to collect a transaction's required signatures
-* ``FinalityFlow`` (initiating), which should be used to notarise and record a transaction
-* ``SendTransactionFlow`` (inlined), which should be used to send a signed transaction if it needed to be resolved on the other side.
+* ``FinalityFlow`` (initiating), which should be used to notarise and record a transaction as well as to broadcast it to
+  all relevant parties
+* ``SendTransactionFlow`` (inlined), which should be used to send a signed transaction if it needed to be resolved on
+  the other side.
 * ``ReceiveTransactionFlow`` (inlined), which should be used receive a signed transaction
 * ``ContractUpgradeFlow`` (initiating), which should be used to change a state's contract
 * ``NotaryChangeFlow`` (initiating), which should be used to change a state's notary
@@ -521,14 +541,14 @@ the transaction's states:
 
     .. literalinclude:: ../../docs/source/example-code/src/main/kotlin/net/corda/docs/FlowCookbook.kt
         :language: kotlin
-        :start-after: DOCSTART 9
-        :end-before: DOCEND 9
-        :dedent: 12
+        :start-after: DOCSTART 09
+        :end-before: DOCEND 09
+        :dedent: 8
 
     .. literalinclude:: ../../docs/source/example-code/src/main/java/net/corda/docs/FlowCookbookJava.java
         :language: java
-        :start-after: DOCSTART 9
-        :end-before: DOCEND 9
+        :start-after: DOCSTART 09
+        :end-before: DOCEND 09
         :dedent: 12
 
 We can also choose to send the transaction to additional parties who aren't one of the state's participants:
@@ -539,7 +559,7 @@ We can also choose to send the transaction to additional parties who aren't one 
         :language: kotlin
         :start-after: DOCSTART 10
         :end-before: DOCEND 10
-        :dedent: 12
+        :dedent: 8
 
     .. literalinclude:: ../../docs/source/example-code/src/main/java/net/corda/docs/FlowCookbookJava.java
         :language: java
@@ -562,7 +582,7 @@ transaction ourselves, we can automatically gather the signatures of the other r
         :language: kotlin
         :start-after: DOCSTART 15
         :end-before: DOCEND 15
-        :dedent: 12
+        :dedent: 8
 
     .. literalinclude:: ../../docs/source/example-code/src/main/java/net/corda/docs/FlowCookbookJava.java
         :language: java
@@ -579,7 +599,7 @@ transaction and provide their signature if they are satisfied:
         :language: kotlin
         :start-after: DOCSTART 16
         :end-before: DOCEND 16
-        :dedent: 12
+        :dedent: 8
 
     .. literalinclude:: ../../docs/source/example-code/src/main/java/net/corda/docs/FlowCookbookJava.java
         :language: java
@@ -600,7 +620,7 @@ transaction data vending requests as the receiver walks the dependency chain usi
         :language: kotlin
         :start-after: DOCSTART 12
         :end-before: DOCEND 12
-        :dedent: 12
+        :dedent: 8
 
     .. literalinclude:: ../../docs/source/example-code/src/main/java/net/corda/docs/FlowCookbookJava.java
         :language: java
@@ -617,7 +637,7 @@ dependencies and verify the transaction:
         :language: kotlin
         :start-after: DOCSTART 13
         :end-before: DOCEND 13
-        :dedent: 12
+        :dedent: 8
 
     .. literalinclude:: ../../docs/source/example-code/src/main/java/net/corda/docs/FlowCookbookJava.java
         :language: java
@@ -633,13 +653,27 @@ We can also send and receive a ``StateAndRef`` dependency chain and automaticall
         :language: kotlin
         :start-after: DOCSTART 14
         :end-before: DOCEND 14
-        :dedent: 12
+        :dedent: 8
 
     .. literalinclude:: ../../docs/source/example-code/src/main/java/net/corda/docs/FlowCookbookJava.java
         :language: java
         :start-after: DOCSTART 14
         :end-before: DOCEND 14
         :dedent: 12
+
+Why inlined subflows?
+^^^^^^^^^^^^^^^^^^^^^
+
+Inlined subflows provide a way to share commonly used flow code `while forcing users to create a parent flow`. Take for
+example ``CollectSignaturesFlow``. Say we made it an initiating flow that automatically kicks off
+``SignTransactionFlow`` that signs the transaction. This would mean malicious nodes can just send any old transaction to
+us using ``CollectSignaturesFlow`` and we would automatically sign it!
+
+By making this pair of flows inlined we provide control to the user over whether to sign the transaction or not by
+forcing them to nest it in their own parent flows.
+
+In general if you're writing a subflow the decision of whether you should make it initiating should depend on whether
+the counter-flow needs broader context to achieve its goal.
 
 FlowException
 -------------
@@ -678,7 +712,7 @@ To provide a progress tracker, we have to override ``FlowLogic.progressTracker``
         :language: kotlin
         :start-after: DOCSTART 17
         :end-before: DOCEND 17
-        :dedent: 8
+        :dedent: 4
 
     .. literalinclude:: ../../docs/source/example-code/src/main/java/net/corda/docs/FlowCookbookJava.java
         :language: java
@@ -694,7 +728,7 @@ We then update the progress tracker's current step as we progress through the fl
         :language: kotlin
         :start-after: DOCSTART 18
         :end-before: DOCEND 18
-        :dedent: 12
+        :dedent: 8
 
     .. literalinclude:: ../../docs/source/example-code/src/main/java/net/corda/docs/FlowCookbookJava.java
         :language: java
