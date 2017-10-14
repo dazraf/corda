@@ -53,13 +53,13 @@ class MyVerticleTest : NodeBasedTest() {
 
     @Before
     fun setup() {
-        setCordappPackages("net.corda.finance.contracts.asset", "net.corda.finance.contracts", "net.corda.vertxdemo")
+//        setCordappPackages("net.corda.finance.contracts.asset", "net.corda.finance.contracts", "net.corda.vertxdemo")
     }
 
     @After
     fun tearDown() {
         webClient.close()
-        unsetCordappPackages()
+//        unsetCordappPackages()
     }
 
     @Test
@@ -67,7 +67,7 @@ class MyVerticleTest : NodeBasedTest() {
         val bankUser = User("user1", "test", permissions = setOf(
             FlowPermissions.startFlowPermission<CashIssueFlow>(),
             FlowPermissions.startFlowPermission<CashPaymentFlow>()))
-        val notaryFuture = startNode(DUMMY_NOTARY.name, advertisedServices = setOf(ServiceInfo(SimpleNotaryService.type)))
+        val notaryFuture = startNode(DUMMY_NOTARY.name)
         val nodeAFuture = startNode(DUMMY_BANK_A.name, rpcUsers = listOf(bankUser))
         val nodeBFuture = startNode(DUMMY_BANK_B.name, rpcUsers = listOf(bankUser))
         val (nodeA, nodeB) = listOf(nodeAFuture, nodeBFuture, notaryFuture).map { it.getOrThrow() }

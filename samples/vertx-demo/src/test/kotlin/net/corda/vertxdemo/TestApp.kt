@@ -7,6 +7,7 @@ import net.corda.nodeapi.internal.ServiceInfo
 import net.corda.testing.DUMMY_BANK_A
 import net.corda.testing.DUMMY_BANK_B
 import net.corda.testing.DUMMY_NOTARY
+import net.corda.testing.driver.NodeParameters
 import net.corda.testing.driver.driver
 
 /**
@@ -18,22 +19,21 @@ fun main(args: Array<String>) {
     // No permissions required as we are not invoking flows.
     val user = User("user1", "test", permissions = setOf("ALL"))
     driver(isDebug = true) {
-        val nodeControllerFuture = startNode(
-            providedName = DUMMY_NOTARY.name,
-            advertisedServices = setOf(ServiceInfo(SimpleNotaryService.type)),
-            startInSameProcess = true
-        )
-        val nodeAFuture = startNode(
-            providedName = DUMMY_BANK_A.name,
-            rpcUsers = listOf(user),
-            startInSameProcess = true
-        )
+        val nodeControllerFuture = startNode<Unit>(NodeParameters(
+                providedName = DUMMY_NOTARY.name,
+                startInSameProcess = true
+        ))
+        val nodeAFuture = startNode<Unit>(NodeParameters(
+                providedName = DUMMY_BANK_A.name,
+                rpcUsers = listOf(user),
+                startInSameProcess = true
+        ))
 
-        val nodeBFuture = startNode(
-            providedName = DUMMY_BANK_B.name,
-            rpcUsers = listOf(user),
-            startInSameProcess = true
-        )
+        val nodeBFuture = startNode<Unit>(NodeParameters(
+                providedName = DUMMY_BANK_B.name,
+                rpcUsers = listOf(user),
+                startInSameProcess = true
+        ))
         listOf(nodeAFuture, nodeBFuture, nodeControllerFuture).map { it.getOrThrow() }
         OpenLink.open("http://localhost:40000", "http://localhost:40001")
         waitForAllNodesToFinish()
